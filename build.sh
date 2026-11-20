@@ -1,58 +1,53 @@
 #!/usr/bin/env bash
-# Checkmate original Intel 8080 ROM build — zmac v1.3; no Python.
+# 280-ZZZAP original Intel 8080 ROM build — project zmac v1.3; no Python.
 set -euo pipefail
 cd -- "$(dirname -- "${BASH_SOURCE[0]}")"
 fail() { echo "ERROR: $*" >&2; exit 1; }
+
 for cmd in dd sha1sum zip stat; do command -v "$cmd" >/dev/null 2>&1 || fail "Missing command: $cmd"; done
 if [[ -n "${ZMAC:-}" ]]; then
     zmac_bin="$ZMAC"
 elif [[ -x tools/zmac ]]; then
     zmac_bin=tools/zmac
 else
-    zmac_bin=zmac
+    fail 'Project assembler tools/zmac is missing (or set ZMAC explicitly)'
 fi
-command -v "$zmac_bin" >/dev/null 2>&1 || fail 'zmac v1.3 not found (set ZMAC or use tools/zmac)'
-[[ -f src/checkmate.asm ]] || fail 'Missing src/checkmate.asm'
-[[ -f roms/original/checkmat.zip ]] || fail 'Missing reference roms/original/checkmat.zip'
+[[ -x "$zmac_bin" ]] || command -v "$zmac_bin" >/dev/null 2>&1 || fail "Assembler unavailable: $zmac_bin"
+[[ -f src/280zzzap.asm ]] || fail 'Missing RE source: src/280zzzap.asm'
+[[ -f roms/original/280zzzap.zip ]] || fail 'Missing original ROM archive: roms/original/280zzzap.zip'
 
-rom_names=(checkmat.h checkmat.g checkmat.f checkmat.e)
-rom_sha1=(
-    f758599d6393398a6a8e6e7399dc1a3862604f65
-    484ff9bfb95166ba09f34c753a7908a73de3cc7d
-    39e0cf502735819a7e1d933e3686945fcfae21af
-    453f95dd31968d439339c41e625481170437eb0f
+names=(zzzaph zzzapg zzzapf zzzape zzzapd zzzapc)
+sha1=(
+    b9cf16eb037ada73631ed24297e9e3b3bf6ab3cd
+    b2e2497e421e79a411d07ebf2eed2bb8dc227003
+    206bf2575696c4b14437f3db37a215ba33211943
+    ae5cf4481ee4b78ca0d2f4d560d295e922aa04a7
+    972475f80253bb0d24773a10aec26a12f28e7c23
+    ffa6bb84ef1f7c2d72fd26c24bd33aa014aeab7e
 )
-echo 'Checkmate original ROM build'
-echo '[1/4] Prepare output'
+
+echo '280-ZZZAP parent-set native ROM build'
 mkdir -p build roms
-rm -f build/checkmate.bin build/checkmate.lst roms/checkmat.zip
-for name in "${rom_names[@]}"; do rm -f "build/$name"; done
+rm -f build/280zzzap.bin build/280zzzap.lst roms/280zzzap.zip
+for name in "${names[@]}"; do rm -f "build/$name"; done
 
-echo '[2/4] Assemble native Intel 8080 source (zmac v1.3)'
-"$zmac_bin" -c -o build/checkmate.bin -x build/checkmate.lst src/checkmate.asm || fail 'Assembly failed'
-[[ -s build/checkmate.bin ]] || fail 'Assembler did not produce a binary image'
-size=$(stat -c %s build/checkmate.bin)
-(( size == 4096 )) || fail "Binary image is $size bytes; expected 4096"
+echo '[1/3] Assemble src/280zzzap.asm with zmac v1.3'
+"$zmac_bin" -c -o build/280zzzap.bin -x build/280zzzap.lst src/280zzzap.asm || fail 'Assembly failed'
+[[ -s build/280zzzap.bin ]] || fail 'Assembler produced no ROM image'
+size=$(stat -c %s build/280zzzap.bin)
+(( size == 6144 )) || fail "Expected 6144-byte binary; got $size"
 
-echo '[3/4] Split and verify four 1 KB ROMs'
-for i in 0 1 2 3; do
-    name=${rom_names[i]}
-    dd if=build/checkmate.bin of="build/$name" bs=1024 skip="$i" count=1 status=none
+echo '[2/3] Split and verify six 1 KB devices'
+for i in 0 1 2 3 4 5; do
+    name=${names[i]}
+    dd if=build/280zzzap.bin of="build/$name" bs=1024 skip="$i" count=1 status=none
     size=$(stat -c %s "build/$name")
-    (( size == 1024 )) || fail "$name is $size bytes; expected 1024"
+    (( size == 1024 )) || fail "$name size $size, expected 1024"
     actual=$(sha1sum "build/$name"); actual=${actual%% *}
-    if [[ "$actual" != "${rom_sha1[i]}" ]]; then
-        echo "ERROR: $name SHA1 mismatch: expected ${rom_sha1[i]}, got $actual" >&2
-        if command -v unzip >/dev/null 2>&1 && command -v cmp >/dev/null 2>&1; then
-            echo 'First byte differences (device offset decimal, byte values octal):' >&2
-            cmp -l <(unzip -p roms/original/checkmat.zip "$name") "build/$name" |
-                awk 'NR<=30 {printf "  %6d  %8s  %9s\n", $1-1, $2, $3} END {printf "  Total differing bytes: %d\n", NR}' >&2 || true
-        fi
-        fail "ROM verification failed; original archive and assembled device are preserved"
-    fi
-    echo "  $name  OK  $actual"
+    [[ "$actual" == "${sha1[i]}" ]] || fail "$name SHA-1 mismatch: expected ${sha1[i]}, got $actual"
+    echo "  PASS $name  $actual"
 done
-echo '[4/4] Package roms/checkmat.zip'
-(cd build && zip -q -X ../roms/checkmat.zip "${rom_names[@]}") || fail 'ROM packaging failed'
-[[ -s roms/checkmat.zip ]] || fail 'ROM ZIP not created'
-echo 'Build complete: roms/checkmat.zip'
+echo '[3/3] Package original MAME device filenames'
+(cd build && zip -q -X ../roms/280zzzap.zip "${names[@]}") || fail 'ZIP packaging failed'
+[[ -s roms/280zzzap.zip ]] || fail 'ZIP output missing'
+echo 'PASS: roms/280zzzap.zip'
