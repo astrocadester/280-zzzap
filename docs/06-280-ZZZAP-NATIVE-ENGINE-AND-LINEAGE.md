@@ -187,7 +187,7 @@ A simple chronology such as “every DNA game used the same interpreter and it g
 
 ## 5. Recommended placement in ODT v3
 
-Include a concise sidebar or comparative section near the 1976–78 transition, titled **“280 Zzzap: a native-code counterpart.”** Its narrative role is similar to Checkmate: a purposeful contrast to Sea Wolf and the baseball interpreter family, rather than a claim that all early game engines shared one bytecode lineage.
+Include a concise sidebar or comparative section near the 1976–78 transition, titled **“280 Zzzap: a native-code counterpart.”** Its narrative role is a purposeful contrast to Sea Wolf and the baseball interpreter family, rather than a claim that all early game engines shared one bytecode lineage.
 
 Use two illustrated examples: (a) `RST $30` consuming an inline byte and resuming native code; (b) the `$1000` locale-table lookup as a reminder that **not every indexed table is a programming-language dictionary**.
 
