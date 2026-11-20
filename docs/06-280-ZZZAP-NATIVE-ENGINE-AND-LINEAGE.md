@@ -6,7 +6,7 @@
 
 ## Executive finding
 
-280 Zzzap is useful to the history, but **not because it supplies another confirmed indexed bytecode interpreter**. Its source shows a substantial native Z80 arcade game, with hardware-facing interrupt routines, reusable restart-vector helpers, compact inline parameters, structured RAM object state, screen drawing, and internationalized text. I did **not** identify a Sea Wolf-style persistent game-script PC, contiguous bytecode stream, or one-byte-to-native-handler interpreter table in the reviewed code.
+280 Zzzap is useful to the history, but **not because it supplies another confirmed indexed bytecode interpreter**. Its source shows a substantial native Intel 8080 arcade game (expressed in Z80-compatible assembly notation), with hardware-facing interrupt routines, reusable restart-vector helpers, compact inline parameters, structured RAM object state, screen drawing, and internationalized text. I did **not** identify a Sea Wolf-style persistent game-script PC, contiguous bytecode stream, or one-byte-to-native-handler interpreter table in the reviewed code.
 
 That is positive historical evidence of **parallel engineering choices**: DNA could build complete games around native code and reusable native services while other games used interpreted command streams. A special-purpose service accessed through `RST` is not automatically a high-level language interpreter.
 
@@ -25,7 +25,7 @@ The dashed connection is **architectural context**, not an assertion that 280 Zz
 
 ## 1. Actual restart-vector helpers, not a game-word dispatch table
 
-The raw address listing exposes specialized small Z80 routines at fixed restart vectors. For example, `RST $18` preserves context and returns to the point after the restart instruction:
+The raw address listing exposes specialized small Intel 8080-compatible routines at fixed restart vectors. For example, `RST $18` preserves context and returns to the point after the restart instruction:
 
 ```asm
 ; zzzap_dz80.asm: $0018–$001C (comments paraphrased)
@@ -47,7 +47,7 @@ The companion `RST $20` helper restores context:
 0025: C9        ret
 ```
 
-These create a reusable Z80 service convention. They are **not** by themselves evidence of a fetched bytecode command or user-defined word dictionary.
+These create a reusable 8080 restart-service convention. They are **not** by themselves evidence of a fetched bytecode command or user-defined word dictionary.
 
 `RST $30` is more revealing: it reads an **inline byte after its calling instruction** by temporarily exchanging `HL` with the return address on the CPU stack.
 
@@ -187,7 +187,7 @@ A simple chronology such as “every DNA game used the same interpreter and it g
 
 ## 5. Recommended placement in ODT v3
 
-Include a concise sidebar or comparative section near the 1976–78 transition, titled **“280 Zzzap: a native-code counterpart.”** Its narrative role is similar to Checkmate: a purposeful contrast to Sea Wolf and the baseball interpreter family, not a forced link in a single bytecode lineage.
+Include a concise sidebar or comparative section near the 1976–78 transition, titled **“280 Zzzap: a native-code counterpart.”** Its narrative role is similar to Checkmate: a purposeful contrast to Sea Wolf and the baseball interpreter family, rather than a claim that all early game engines shared one bytecode lineage.
 
 Use two illustrated examples: (a) `RST $30` consuming an inline byte and resuming native code; (b) the `$1000` locale-table lookup as a reminder that **not every indexed table is a programming-language dictionary**.
 
