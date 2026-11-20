@@ -3179,61 +3179,67 @@ ROAD_DELTA_PREFIX_BYTE:
         DB $D5  ; table entry preceding compressed road deltas
 
 ROAD_POSITIVE_DELTA_STREAM:
-        DB $25,$55,$55,$15,$15,$15,$04,$51  ; four packed two-bit positive road deltas
-        DB $11,$11,$04,$44,$11,$04,$10,$41  ; four packed two-bit positive road deltas
-        DB $04,$10,$41,$01,$01,$04,$04,$04  ; four packed two-bit positive road deltas
-        DB $04,$04,$01,$01,$00,$40,$10,$04  ; four packed two-bit positive road deltas
-        DB $01,$00,$40,$10,$01,$00,$10,$04  ; four packed two-bit positive road deltas
-        DB $00,$40,$04,$00,$10,$01,$00,$10  ; four packed two-bit positive road deltas
-        DB $00,$40,$01,$00,$10,$00,$40,$01  ; four packed two-bit positive road deltas
-        DB $00,$01,$00,$04,$00,$10,$00,$40  ; four packed two-bit positive road deltas
+; Packed positive road-position deltas: each byte contains four 2-bit steps.
+        DB $25,$55,$55,$15,$15,$15,$04,$51
+        DB $11,$11,$04,$44,$11,$04,$10,$41
+        DB $04,$10,$41,$01,$01,$04,$04,$04
+        DB $04,$04,$01,$01,$00,$40,$10,$04
+        DB $01,$00,$40,$10,$01,$00,$10,$04
+        DB $00,$40,$04,$00,$10,$01,$00,$10
+        DB $00,$40,$01,$00,$10,$00,$40,$01
+        DB $00,$01,$00,$04,$00,$10,$00,$40
 
 ROAD_NEGATIVE_START_VALUES:
-        DB $7F,$79,$74,$70,$6B,$67,$64,$60  ; initial negative road curve values
+; Initial values for the negative road curve before delta expansion.
+        DB $7F,$79,$74,$70,$6B,$67,$64,$60
 
 ROAD_NEGATIVE_DELTA_STREAM:
-        DB $FE,$EE,$A6,$99,$65,$55,$55,$54  ; four packed two-bit negative road deltas
-        DB $51,$45,$11,$11,$11,$04,$41,$04  ; four packed two-bit negative road deltas
-        DB $10,$40,$41,$00,$40,$40,$10,$04  ; four packed two-bit negative road deltas
-        DB $00,$40,$04,$00,$10,$00,$10,$00  ; four packed two-bit negative road deltas
-        DB $10,$00,$01,$00,$00,$04,$00,$00  ; four packed two-bit negative road deltas
-        DB $04,$00,$00,$00,$40,$00,$00,$00  ; four packed two-bit negative road deltas
-        DB $10,$00,$00,$00,$00,$40,$00,$00  ; four packed two-bit negative road deltas
-        DB $00,$00,$01,$00,$00,$00  ; four packed two-bit negative road deltas
+; Packed negative road-position deltas: four 2-bit steps per byte.
+        DB $FE,$EE,$A6,$99,$65,$55,$55,$54
+        DB $51,$45,$11,$11,$11,$04,$41,$04
+        DB $10,$40,$41,$00,$40,$40,$10,$04
+        DB $00,$40,$04,$00,$10,$00,$10,$00
+        DB $10,$00,$01,$00,$00,$04,$00,$00
+        DB $04,$00,$00,$00,$40,$00,$00,$00
+        DB $10,$00,$00,$00,$00,$40,$00,$00
+        DB $00,$00,$01,$00,$00,$00
 
 STEERING_CURVE_VALUES:
-        DB $81,$8F,$A2,$AD,$B5,$BB,$C0,$C4  ; nonlinear steering response curve
-        DB $C8,$CB,$CE,$D0,$D3,$D5,$D7,$D9  ; nonlinear steering response curve
-        DB $DB,$DC,$DE,$DF,$E1,$E2,$E3,$E4  ; nonlinear steering response curve
-        DB $E6,$E7,$E8,$E9,$EA,$EB,$EC,$ED  ; nonlinear steering response curve
-        DB $ED,$EE,$EF,$F0,$F1,$F1,$F2,$F3  ; nonlinear steering response curve
-        DB $F4,$F4,$F5,$F6,$F6,$F7,$F7,$F8  ; nonlinear steering response curve
-        DB $F9,$F9,$FA,$FA,$FB,$FB,$FC,$FC  ; nonlinear steering response curve
-        DB $FD,$FD,$FE,$FE,$FF,$FF,$FF,$FF  ; nonlinear steering response curve
-        DB $FF  ; nonlinear steering response curve
+; Nonlinear steering-response lookup; retains the original $FF endpoint.
+        DB $81,$8F,$A2,$AD,$B5,$BB,$C0,$C4
+        DB $C8,$CB,$CE,$D0,$D3,$D5,$D7,$D9
+        DB $DB,$DC,$DE,$DF,$E1,$E2,$E3,$E4
+        DB $E6,$E7,$E8,$E9,$EA,$EB,$EC,$ED
+        DB $ED,$EE,$EF,$F0,$F1,$F1,$F2,$F3
+        DB $F4,$F4,$F5,$F6,$F6,$F7,$F7,$F8
+        DB $F9,$F9,$FA,$FA,$FB,$FB,$FC,$FC
+        DB $FD,$FD,$FE,$FE,$FF,$FF,$FF,$FF
+        DB $FF
 
 STEERING_SPEED_MULTIPLIERS:
-        DB $01,$01,$01,$01,$01,$01,$01,$01  ; steering and speed lookup
-        DB $01,$01,$01,$02,$02,$02,$02,$02  ; steering and speed lookup
-        DB $02,$02,$02,$02,$02,$02,$02,$02  ; steering and speed lookup
-        DB $02,$02,$03,$03,$03,$03,$03,$03  ; steering and speed lookup
-        DB $03,$03,$03,$04,$04,$04,$04,$04  ; steering and speed lookup
-        DB $04,$04,$05,$05,$05,$05,$05,$06  ; steering and speed lookup
-        DB $06,$06,$06,$06,$07,$07,$07,$07  ; steering and speed lookup
-        DB $08,$08,$08,$09,$09,$09,$0A,$0A  ; steering and speed lookup
-        DB $0A,$0B,$0B,$0C,$0C,$0C,$0D,$0D  ; steering and speed lookup
-        DB $0E,$0E,$0F,$10,$10,$11,$11,$12  ; steering and speed lookup
-        DB $13,$13,$14,$15,$16,$16,$17,$18  ; steering and speed lookup
-        DB $19,$1A,$1B,$1C,$1D,$1E,$1F,$20  ; steering and speed lookup
-        DB $21,$23,$24,$25,$27,$28,$2A,$2B  ; steering and speed lookup
-        DB $2D,$2F,$30,$32,$34,$36,$38,$3A  ; steering and speed lookup
-        DB $3C,$3E,$41,$43,$46,$48,$4B,$4E  ; steering and speed lookup
-        DB $51,$54,$57,$5A,$5C,$61,$64,$68  ; steering and speed lookup
+; Steering/speed scaling lookup, ordered from small to large values.
+        DB $01,$01,$01,$01,$01,$01,$01,$01
+        DB $01,$01,$01,$02,$02,$02,$02,$02
+        DB $02,$02,$02,$02,$02,$02,$02,$02
+        DB $02,$02,$03,$03,$03,$03,$03,$03
+        DB $03,$03,$03,$04,$04,$04,$04,$04
+        DB $04,$04,$05,$05,$05,$05,$05,$06
+        DB $06,$06,$06,$06,$07,$07,$07,$07
+        DB $08,$08,$08,$09,$09,$09,$0A,$0A
+        DB $0A,$0B,$0B,$0C,$0C,$0C,$0D,$0D
+        DB $0E,$0E,$0F,$10,$10,$11,$11,$12
+        DB $13,$13,$14,$15,$16,$16,$17,$18
+        DB $19,$1A,$1B,$1C,$1D,$1E,$1F,$20
+        DB $21,$23,$24,$25,$27,$28,$2A,$2B
+        DB $2D,$2F,$30,$32,$34,$36,$38,$3A
+        DB $3C,$3E,$41,$43,$46,$48,$4B,$4E
+        DB $51,$54,$57,$5A,$5C,$61,$64,$68
 
 ROAD_STEP_INDEX:
-        DB $00,$01,$13,$1E,$26,$2C,$31,$33  ; road step index
-        DB $35,$39,$3B,$3D,$3F,$41,$42,$43  ; road step index
-        DB $44  ; road step index
+; Steering step-index offsets, in the original lookup order.
+        DB $00,$01,$13,$1E,$26,$2C,$31,$33
+        DB $35,$39,$3B,$3D,$3F,$41,$42,$43
+        DB $44
 
 ;*******************************************************************************
 ; FOUR LANGUAGE POINTER AND STRING TABLES
