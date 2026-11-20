@@ -78,7 +78,7 @@ RST30_INLINE_MESSAGE:
         LD A,(HL)
         INC HL
         EX (SP),HL
-        CALL TEXT_STEP_0F91
+        CALL SELECT_MESSAGE_DISPLAY_SLOT
         LD (HL),A
 
 UPDATE_BOTTOM_MESSAGES:
@@ -93,10 +93,10 @@ UPDATE_BOTTOM_MESSAGES:
         CALL FILL_SCREEN_BAND
         LD HL,$205E
         LD A,(HL)
-        CALL TEXT_STEP_0F5E
+        CALL DISPLAY_TEXT_BY_LOCALE
         INC HL
         LD A,(HL)
-        CALL TEXT_STEP_0F5E
+        CALL DISPLAY_TEXT_BY_LOCALE
         RST $20
 
 ERASE_MESSAGE_BAND:
@@ -982,25 +982,25 @@ FONT_CHAR_5F:
 DRAW_BCD_DIGITS:
         LD A,(HL)
         AND $F0
-        JP NZ,DRAW_STEP_0375
+        JP NZ,DRAW_BCD_ROTATE_HIGH_NIBBLE
         LD A,$40
         CALL DRAW_GLYPH
-        JP DRAW_LOAD_037C
+        JP DRAW_BCD_READ_LOW_NIBBLE
 
 DRAW_NEXT_DIGIT:
         LD A,(HL)
 
-DRAW_STEP_0375:
+DRAW_BCD_ROTATE_HIGH_NIBBLE:
         RLCA
         RLCA
         RLCA
         RLCA
-        CALL DRAW_MASK_037D
+        CALL DRAW_BCD_CONVERT_NIBBLE
 
-DRAW_LOAD_037C:
+DRAW_BCD_READ_LOW_NIBBLE:
         LD A,(HL)
 
-DRAW_MASK_037D:
+DRAW_BCD_CONVERT_NIBBLE:
         AND $0F
         ADD A,$30
 
@@ -1022,13 +1022,13 @@ DRAW_GLYPH_PIXEL_ROWS:
         LD A,H
         CP $3B
         LD A,$00
-        JP C,DRAW_LOAD_039D
+        JP C,DRAW_GLYPH_SET_XOR_MASK
         CPL
 
-DRAW_LOAD_039D:
+DRAW_GLYPH_SET_XOR_MASK:
         LD C,A
 
-DRAW_STEP_039E:
+DRAW_GLYPH_ROW_LOOP:
         PUSH BC
         LD A,(DE)
         INC DE
@@ -1038,13 +1038,13 @@ DRAW_STEP_039E:
         ADD HL,BC
         POP BC
         DEC B
-        JP NZ,DRAW_STEP_039E
+        JP NZ,DRAW_GLYPH_ROW_LOOP
         POP DE
         INC DE
         POP HL
         RET
 
-DRAW_LOAD_03B0:
+FONT_CLEAR_OFFSET_HIGH:
         LD B,$00
 
 FIND_FONT_CHARACTER:
@@ -1073,39 +1073,39 @@ DISPLAY_CRASH_CAPTION:
         LD DE,$2800
         LD B,$04
 
-DRAW_CALL_03D5:
+DRAW_IMPACT_NEXT_CHARACTER:
         CALL DRAW_IMPACT_GLYPH
         LD A,E
         ADD A,$08
         LD E,A
         INC HL
         DEC B
-        JP NZ,DRAW_CALL_03D5
+        JP NZ,DRAW_IMPACT_NEXT_CHARACTER
         RET
 
 DRAW_IMPACT_GLYPH:
         LD A,(HL)
         RST $18
-        CALL DRAW_LOAD_03B0
+        CALL FONT_CLEAR_OFFSET_HIGH
 
-DRAW_STEP_03E7:
+DRAW_IMPACT_NEXT_SCANLINE:
         PUSH HL
         LD A,(DE)
         INC DE
 
-DRAW_STEP_03EA:
+DRAW_IMPACT_SCAN_BITS:
         RRA
-        CALL C,DRAW_STEP_03FA
+        CALL C,DRAW_IMPACT_ERASE_COLUMN
         INC HL
         AND A
-        JP NZ,DRAW_STEP_03EA
+        JP NZ,DRAW_IMPACT_SCAN_BITS
         POP HL
         INC H
         DEC B
-        JP NZ,DRAW_STEP_03E7
+        JP NZ,DRAW_IMPACT_NEXT_SCANLINE
         RST $20
 
-DRAW_STEP_03FA:
+DRAW_IMPACT_ERASE_COLUMN:
         PUSH HL
         PUSH DE
         PUSH BC
@@ -1113,11 +1113,11 @@ DRAW_STEP_03FA:
         LD BC,$08FF
         LD DE,$0020
 
-DRAW_LOAD_0404:
+DRAW_IMPACT_CLEAR_NEXT_PIXEL:
         LD (HL),C
         ADD HL,DE
         DEC B
-        JP NZ,DRAW_LOAD_0404
+        JP NZ,DRAW_IMPACT_CLEAR_NEXT_PIXEL
         RST $20
 
 ;*******************************************************************************
@@ -1421,7 +1421,7 @@ IRQ_GAME_PHASE_DISPATCH:
         JP NZ,GAME_FRAME_ADVANCE
         JP DRIVING_FRAME_UPDATE
 
-ROAD_LOAD_06D2:
+IRQ_TOGGLE_FRAME_PHASE:
         LD HL,$2024
         LD A,(HL)
         INC A
@@ -1439,24 +1439,24 @@ IRQ_RESTORE_REGISTERS:
 DRIVING_FRAME_UPDATE:
         LD A,($2022)
         AND A
-        JP M,ANIM_CALL_0A9D
+        JP M,ANIMATION_FRAME_ENTRY
         RET Z
         RRCA
-        JP NC,ROAD_LOAD_0831
+        JP NC,INPUT_SAMPLE_CABINET_PORTS
         LD HL,($2027)
-        CALL PYLON_LOAD_09C9
-        CALL PYLON_LOAD_09C9
-        CALL PYLON_LOAD_09C9
-        CALL PYLON_LOAD_09C9
-        CALL PYLON_LOAD_09C9
-        CALL PYLON_LOAD_09C9
+        CALL PYLON_RENDER_ACTIVE_COLUMNS
+        CALL PYLON_RENDER_ACTIVE_COLUMNS
+        CALL PYLON_RENDER_ACTIVE_COLUMNS
+        CALL PYLON_RENDER_ACTIVE_COLUMNS
+        CALL PYLON_RENDER_ACTIVE_COLUMNS
+        CALL PYLON_RENDER_ACTIVE_COLUMNS
         LD BC,$0020
-        CALL PYLON_LOAD_09E5
-        CALL PYLON_LOAD_09E5
-        CALL PYLON_LOAD_09E5
-        CALL PYLON_LOAD_09E5
-        CALL PYLON_LOAD_09E5
-        CALL PYLON_LOAD_09E5
+        CALL PYLON_ERASE_ACTIVE_COLUMNS
+        CALL PYLON_ERASE_ACTIVE_COLUMNS
+        CALL PYLON_ERASE_ACTIVE_COLUMNS
+        CALL PYLON_ERASE_ACTIVE_COLUMNS
+        CALL PYLON_ERASE_ACTIVE_COLUMNS
+        CALL PYLON_ERASE_ACTIVE_COLUMNS
         LD HL,($2025)
         CALL PYLON_DRAW_MASKED
         CALL PYLON_DRAW_MASKED
@@ -1464,61 +1464,61 @@ DRIVING_FRAME_UPDATE:
         CALL PYLON_DRAW_MASKED
         CALL PYLON_DRAW_MASKED
         CALL PYLON_DRAW_MASKED
-        CALL PYLON_LOAD_0A33
-        CALL PYLON_LOAD_0A33
-        CALL PYLON_LOAD_0A33
-        CALL PYLON_LOAD_0A33
-        CALL PYLON_LOAD_0A33
-        CALL PYLON_LOAD_0A33
+        CALL PYLON_DRAW_ACTIVE_COLUMNS
+        CALL PYLON_DRAW_ACTIVE_COLUMNS
+        CALL PYLON_DRAW_ACTIVE_COLUMNS
+        CALL PYLON_DRAW_ACTIVE_COLUMNS
+        CALL PYLON_DRAW_ACTIVE_COLUMNS
+        CALL PYLON_DRAW_ACTIVE_COLUMNS
         CALL PYLON_POSITION_UPDATE
         LD A,($213E)
         LD HL,$2143
         DEC (HL)
-        JP P,ROAD_LOAD_076D
+        JP P,ROAD_SETUP_DELTA_POINTER
         LD (HL),$03
         LD HL,$213E
         LD A,(HL)
         INC HL
         CP (HL)
-        JP Z,ROAD_LOAD_076D
-        JP C,ROAD_LOAD_0766
+        JP Z,ROAD_SETUP_DELTA_POINTER
+        JP C,ROAD_COMBINE_CURVE_OFFSET
         CP $04
-        JP NC,ROAD_STEP_0761
+        JP NC,ROAD_REDUCE_CURVE_OFFSET
         XOR A
-        JP ROAD_DECREMENT_076B
+        JP ROAD_STORE_CURVE_DELTA
 
-ROAD_STEP_0761:
+ROAD_REDUCE_CURVE_OFFSET:
         SUB $04
-        JP ROAD_DECREMENT_076B
+        JP ROAD_STORE_CURVE_DELTA
 
-ROAD_LOAD_0766:
+ROAD_COMBINE_CURVE_OFFSET:
         LD E,A
         LD A,($205A)
         ADD A,E
 
-ROAD_DECREMENT_076B:
+ROAD_STORE_CURVE_DELTA:
         DEC HL
         LD (HL),A
 
-ROAD_LOAD_076D:
+ROAD_SETUP_DELTA_POINTER:
         LD E,A
         LD D,$00
         LD HL,($2047)
         LD A,H
         AND A
-        JP Z,ROAD_LOAD_077C
+        JP Z,ROAD_ADJUST_PREVIOUS_DELTA
         ADD HL,DE
         LD ($2047),HL
 
-ROAD_LOAD_077C:
+ROAD_ADJUST_PREVIOUS_DELTA:
         LD HL,($2049)
         LD A,H
         AND A
-        JP Z,ROAD_STEP_0788
+        JP Z,ROAD_SCALE_DELTA_SIXTEEN
         ADD HL,DE
         LD ($2049),HL
 
-ROAD_STEP_0788:
+ROAD_SCALE_DELTA_SIXTEEN:
         EX DE,HL
         ADD HL,HL
         ADD HL,HL
@@ -1542,10 +1542,10 @@ ROAD_STEP_0788:
         LD ($2002),A
         LD A,($2022)
         XOR $03
-        JP Z,ROAD_STEP_0830
+        JP Z,INPUT_RESTORE_FLAGS
         LD A,($213E)
         AND A
-        JP Z,ROAD_STEP_0830
+        JP Z,INPUT_RESTORE_FLAGS
         LD A,($2037)
         LD B,A
         CALL STEERING_MAGNITUDE_SIGN
@@ -1557,7 +1557,7 @@ ROAD_STEP_0788:
         INC A
         ADD A,$0B
         CP C
-        JP NC,ROAD_STEP_07E8
+        JP NC,ROAD_RESET_SPEED_INDICATOR
         CPL
         INC A
         ADD A,C
@@ -1570,14 +1570,14 @@ ROAD_STEP_0788:
         LD A,B
         LD B,D
         AND A
-        JP P,ROAD_LOAD_0801
+        JP P,ROAD_ADVANCE_CAR_LOCATION
         LD A,C
         CPL
         INC A
         LD C,A
         JP ROAD_CALCULATE_POSITION
 
-ROAD_STEP_07E8:
+ROAD_RESET_SPEED_INDICATOR:
         XOR A
         LD ($2141),A
         LD A,C
@@ -1591,45 +1591,45 @@ ROAD_STEP_07E8:
         POP DE
         ADD A,D
         LD C,A
-        JP P,ROAD_LOAD_0801
+        JP P,ROAD_ADVANCE_CAR_LOCATION
 
 ROAD_CALCULATE_POSITION:
         LD B,$FF
 
-ROAD_LOAD_0801:
+ROAD_ADVANCE_CAR_LOCATION:
         LD HL,($2000)
         ADD HL,BC
         LD ($2000),HL
         LD A,H
         AND A
-        JP Z,ROAD_LOAD_0822
+        JP Z,ROAD_APPLY_SPEED_BOUNDARY
         LD A,($2022)
         XOR $05
-        JP Z,ROAD_LOAD_081A
+        JP Z,ROAD_REFLECT_CAR_LOCATION
         LD HL,$2022
         INC (HL)
         RET
 
-ROAD_LOAD_081A:
+ROAD_REFLECT_CAR_LOCATION:
         LD A,H
         CPL
         LD L,A
         LD H,$00
         LD ($2000),HL
 
-ROAD_LOAD_0822:
+ROAD_APPLY_SPEED_BOUNDARY:
         LD A,L
         CALL STEERING_MAGNITUDE_SIGN
         CP $28
         LD A,H
         ADC A,A
         LD ($2140),A
-        JP ROAD_LOAD_0831
+        JP INPUT_SAMPLE_CABINET_PORTS
 
-ROAD_STEP_0830:
+INPUT_RESTORE_FLAGS:
         POP AF
 
-ROAD_LOAD_0831:
+INPUT_SAMPLE_CABINET_PORTS:
         LD HL,$2045
         IN A,($00)
         LD (HL),A
@@ -1638,12 +1638,12 @@ ROAD_LOAD_0831:
         LD (HL),A
         CALL SOUND_TIMER_UPDATE
         LD HL,$203F
-        CALL ROAD_LOAD_0849
+        CALL COUNTDOWN_DECREMENT_NONZERO
         INC HL
-        CALL ROAD_LOAD_0849
+        CALL COUNTDOWN_DECREMENT_NONZERO
         INC HL
 
-ROAD_LOAD_0849:
+COUNTDOWN_DECREMENT_NONZERO:
         LD A,(HL)
         AND A
         RET Z
@@ -1677,9 +1677,9 @@ STEERING_LOOKUP_CURVE:
         JP P,STEERING_LOOKUP_MAGNITUDE
         LD E,D
         CP $EE
-        JP C,PYLON_STEP_0881
+        JP C,STEERING_RESTORE_SIGN
         INC E
-        JP PYLON_STEP_0881
+        JP STEERING_RESTORE_SIGN
 
 STEERING_LOOKUP_MAGNITUDE:
         LD E,A
@@ -1687,7 +1687,7 @@ STEERING_LOOKUP_MAGNITUDE:
         ADD HL,DE
         LD E,(HL)
 
-PYLON_STEP_0881:
+STEERING_RESTORE_SIGN:
         POP AF
         LD A,E
         RET P
@@ -1710,23 +1710,23 @@ GAME_FRAME_ADVANCE:
         LD HL,($2027)
         LD DE,$0046
         ADD HL,DE
-        CALL PYLON_LOAD_09C9
-        CALL PYLON_LOAD_09C9
+        CALL PYLON_RENDER_ACTIVE_COLUMNS
+        CALL PYLON_RENDER_ACTIVE_COLUMNS
         LD HL,($2025)
         LD DE,$0046
         ADD HL,DE
-        CALL PYLON_LOAD_0A5C
-        CALL PYLON_LOAD_0A5C
+        CALL PYLON_CHECK_ACTIVE_NEXT
+        CALL PYLON_CHECK_ACTIVE_NEXT
         LD HL,($2027)
         LD DE,$003C
         ADD HL,DE
-        CALL PYLON_LOAD_09C9
-        CALL PYLON_LOAD_09C9
+        CALL PYLON_RENDER_ACTIVE_COLUMNS
+        CALL PYLON_RENDER_ACTIVE_COLUMNS
         LD HL,($2025)
         LD DE,$003C
         ADD HL,DE
-        CALL PYLON_LOAD_0A5C
-        CALL PYLON_LOAD_0A5C
+        CALL PYLON_CHECK_ACTIVE_NEXT
+        CALL PYLON_CHECK_ACTIVE_NEXT
         LD HL,($2027)
         EX DE,HL
         LD HL,($2025)
@@ -1777,27 +1777,27 @@ ROAD_LOOKUP_CURVE:
         LD A,($2002)
         ADD A,C
         AND A
-        JP P,PYLON_LOAD_092B
+        JP P,ROAD_SELECT_SPEED_SCALE
         CP $EE
-        JP NC,PYLON_LOAD_0926
+        JP NC,ROAD_USE_MINIMUM_WIDTH
         LD L,B
-        JP PYLON_LOAD_0931
+        JP ROAD_ADJUST_SIGNED_WIDTH
 
-PYLON_LOAD_0926:
+ROAD_USE_MINIMUM_WIDTH:
         LD L,$01
-        JP PYLON_LOAD_0931
+        JP ROAD_ADJUST_SIGNED_WIDTH
 
-PYLON_LOAD_092B:
+ROAD_SELECT_SPEED_SCALE:
         LD C,A
         LD HL,$11AE
         ADD HL,BC
         LD L,(HL)
 
-PYLON_LOAD_0931:
+ROAD_ADJUST_SIGNED_WIDTH:
         LD H,B
         LD A,($2037)
         AND A
-        JP P,PYLON_STEP_093F
+        JP P,ROAD_STORE_SHIFTED_POSITION
         XOR A
         SUB L
         LD L,A
@@ -1805,7 +1805,7 @@ PYLON_LOAD_0931:
         SBC A,H
         LD H,A
 
-PYLON_STEP_093F:
+ROAD_STORE_SHIFTED_POSITION:
         EX DE,HL
         LD HL,($2000)
         ADD HL,DE
@@ -1843,7 +1843,7 @@ PYLON_STEP_093F:
         ADD HL,BC
         LD A,H
         POP HL
-        CALL PYLON_MASK_098D
+        CALL PYLON_SET_ACTIVE_RECORD
         POP DE
         XOR A
         SUB E
@@ -1862,9 +1862,9 @@ PYLON_STEP_093F:
         ADD HL,DE
         LD A,H
 
-PYLON_MASK_098D:
+PYLON_SET_ACTIVE_RECORD:
         AND A
-        JP NZ,PYLON_LOAD_09BC
+        JP NZ,PYLON_CLEAR_AND_ADVANCE_RECORD
         EX DE,HL
         LD HL,($2060)
         LD A,($2007)
@@ -1894,7 +1894,7 @@ PYLON_MASK_098D:
 PYLON_DRAW_RECORD:
         RET
 
-PYLON_LOAD_09BC:
+PYLON_CLEAR_AND_ADVANCE_RECORD:
         LD HL,($2060)
         LD (HL),$00
         LD DE,$0005
@@ -1902,10 +1902,10 @@ PYLON_LOAD_09BC:
         LD ($2060),HL
         RET
 
-PYLON_LOAD_09C9:
+PYLON_RENDER_ACTIVE_COLUMNS:
         LD A,(HL)
         AND A
-        JP Z,PYLON_LOAD_0A61
+        JP Z,PYLON_NEXT_FIVE_BYTE_RECORD
         INC HL
         LD B,(HL)
         INC HL
@@ -1918,20 +1918,20 @@ PYLON_LOAD_09C9:
         EX DE,HL
         LD DE,$001F
 
-PYLON_LOAD_09DB:
+PYLON_RENDER_NEXT_PIXEL_ROW:
         LD (HL),D
         INC HL
         LD (HL),D
         ADD HL,DE
         DEC B
-        JP NZ,PYLON_LOAD_09DB
+        JP NZ,PYLON_RENDER_NEXT_PIXEL_ROW
         POP HL
         RET
 
-PYLON_LOAD_09E5:
+PYLON_ERASE_ACTIVE_COLUMNS:
         LD A,(HL)
         AND A
-        JP Z,PYLON_LOAD_0A61
+        JP Z,PYLON_NEXT_FIVE_BYTE_RECORD
         INC HL
         LD A,(HL)
         INC HL
@@ -1942,18 +1942,18 @@ PYLON_LOAD_09E5:
         INC HL
         EX DE,HL
 
-PYLON_LOAD_09F3:
+PYLON_ERASE_NEXT_PIXEL_ROW:
         LD (HL),B
         ADD HL,BC
         DEC A
-        JP NZ,PYLON_LOAD_09F3
+        JP NZ,PYLON_ERASE_NEXT_PIXEL_ROW
         EX DE,HL
         RET
 
 PYLON_DRAW_MASKED:
         LD A,(HL)
         AND A
-        JP Z,PYLON_LOAD_0A61
+        JP Z,PYLON_NEXT_FIVE_BYTE_RECORD
         LD C,A
         INC HL
         LD B,(HL)
@@ -1983,7 +1983,7 @@ PYLON_DRAW_MASKED:
         LD E,$1F
         POP HL
 
-PYLON_LOAD_0A24:
+PYLON_COMBINE_VIDEO_MASK:
         LD A,(HL)
         OR C
         LD (HL),A
@@ -1993,16 +1993,16 @@ PYLON_LOAD_0A24:
         LD (HL),A
         ADD HL,DE
         DEC B
-        JP NZ,PYLON_LOAD_0A24
+        JP NZ,PYLON_COMBINE_VIDEO_MASK
 
 PYLON_DRAW_PIXEL:
         POP HL
         RET
 
-PYLON_LOAD_0A33:
+PYLON_DRAW_ACTIVE_COLUMNS:
         LD A,(HL)
         AND A
-        JP Z,PYLON_LOAD_0A61
+        JP Z,PYLON_NEXT_FIVE_BYTE_RECORD
         INC HL
         LD B,(HL)
         INC HL
@@ -2023,27 +2023,27 @@ PYLON_LOAD_0A33:
         EX DE,HL
         LD DE,$0020
 
-PYLON_LOAD_0A52:
+PYLON_DRAW_NEXT_PIXEL_ROW:
         LD A,(HL)
         OR C
         LD (HL),A
         ADD HL,DE
         DEC B
-        JP NZ,PYLON_LOAD_0A52
+        JP NZ,PYLON_DRAW_NEXT_PIXEL_ROW
         POP HL
         RET
 
-PYLON_LOAD_0A5C:
+PYLON_CHECK_ACTIVE_NEXT:
         LD A,(HL)
         AND A
-        JP NZ,PYLON_LOAD_0A66
+        JP NZ,PYLON_READ_RECORD_DIMENSIONS
 
-PYLON_LOAD_0A61:
+PYLON_NEXT_FIVE_BYTE_RECORD:
         LD DE,$0005
         ADD HL,DE
         RET
 
-PYLON_LOAD_0A66:
+PYLON_READ_RECORD_DIMENSIONS:
         LD C,A
         INC HL
         LD B,(HL)
@@ -2073,13 +2073,13 @@ PYLON_LOAD_0A66:
         LD E,$1F
         POP HL
 
-PYLON_LOAD_0A8B:
+PYLON_WRITE_PIXEL_SAMPLE:
         LD (HL),C
         INC HL
         LD (HL),A
         ADD HL,DE
         DEC B
-        JP NZ,PYLON_LOAD_0A8B
+        JP NZ,PYLON_WRITE_PIXEL_SAMPLE
         POP HL
         RET
 
@@ -2094,12 +2094,12 @@ PIXEL_BIT_MASK_TABLE:
 ; PYLON AND ANIMATION LOGIC
 ;*******************************************************************************
 
-ANIM_CALL_0A9D:
+ANIMATION_FRAME_ENTRY:
         CALL ANIMATION_ADVANCE_RECORD
         CALL DRAW_LARGE_GFX_RECORD
         LD HL,$06DA
         EX (SP),HL
-        JP ROAD_LOAD_0831
+        JP INPUT_SAMPLE_CABINET_PORTS
 
 ANIMATION_ADVANCE_RECORD:
         LD HL,$204B
@@ -2108,7 +2108,7 @@ ANIMATION_ADVANCE_RECORD:
         EX DE,HL
         LD HL,($204D)
         LD B,$09
-        CALL ANIM_LOAD_0ADF
+        CALL ANIMATION_COPY_NEXT_BYTE
 
 ANIMATION_APPLY_OFFSET:
         LD HL,$2054
@@ -2136,13 +2136,13 @@ ANIMATION_APPLY_OFFSET:
         LD HL,($2052)
         LD B,$05
 
-ANIM_LOAD_0ADF:
+ANIMATION_COPY_NEXT_BYTE:
         LD A,(HL)
         INC HL
         LD (DE),A
         INC DE
         DEC B
-        JP NZ,ANIM_LOAD_0ADF
+        JP NZ,ANIMATION_COPY_NEXT_BYTE
         RET
 
 DRAW_LARGE_GFX_RECORD:
@@ -2153,32 +2153,32 @@ DRAW_LARGE_GFX_RECORD:
         LD HL,($2058)
         LD A,H
         OR L
-        JP Z,ANIM_LOAD_0B08
+        JP Z,ANIMATION_CHECK_ACTIVE_LINK
         LD BC,$0526
         LD DE,$001B
 
-ANIM_LOAD_0AFC:
+ANIMATION_LOAD_ROW_LENGTH:
         LD A,B
 
-ANIM_LOAD_0AFD:
+ANIMATION_CLEAR_NEXT_COLUMN:
         LD (HL),D
         INC HL
         DEC A
-        JP NZ,ANIM_LOAD_0AFD
+        JP NZ,ANIMATION_CLEAR_NEXT_COLUMN
         ADD HL,DE
         DEC C
-        JP NZ,ANIM_LOAD_0AFC
+        JP NZ,ANIMATION_LOAD_ROW_LENGTH
 
-ANIM_LOAD_0B08:
+ANIMATION_CHECK_ACTIVE_LINK:
         LD HL,($204D)
         LD A,H
         OR L
-        JP NZ,ANIM_LOAD_0B18
+        JP NZ,ANIMATION_READ_GRAPHIC_DIMENSIONS
         LD A,$01
         LD ($2022),A
-        JP ANIM_LOAD_0B52
+        JP ANIMATION_DRAW_BOTH_PYLON_SIDES
 
-ANIM_LOAD_0B18:
+ANIMATION_READ_GRAPHIC_DIMENSIONS:
         LD HL,($2050)
         LD C,(HL)
         INC HL
@@ -2200,11 +2200,11 @@ DRAW_PYLON_SIDES:
         OUT ($03),A
         POP DE
 
-ANIM_STEP_0B34:
+ANIMATION_PRESERVE_DRAW_CONTEXT:
         PUSH BC
         PUSH HL
 
-ANIM_LOAD_0B36:
+ANIMATION_DRAW_NEXT_PIXEL:
         LD A,(DE)
         INC DE
         OUT ($03),A
@@ -2212,7 +2212,7 @@ ANIM_LOAD_0B36:
         LD (HL),A
         INC HL
         DEC C
-        JP NZ,ANIM_LOAD_0B36
+        JP NZ,ANIMATION_DRAW_NEXT_PIXEL
         XOR A
         OUT ($03),A
         IN A,($03)
@@ -2222,9 +2222,9 @@ ANIM_LOAD_0B36:
         ADD HL,BC
         POP BC
         DEC B
-        JP NZ,ANIM_STEP_0B34
+        JP NZ,ANIMATION_PRESERVE_DRAW_CONTEXT
 
-ANIM_LOAD_0B52:
+ANIMATION_DRAW_BOTH_PYLON_SIDES:
         LD HL,($2025)
         LD DE,$003C
         ADD HL,DE
@@ -2248,9 +2248,9 @@ GAME_INITIALIZE:
         LD HL,$FFFF
         LD ($2009),HL
         LD ($200B),HL
-        CALL TEXT_CALL_0EB3
+        CALL START_PROMPT_DRAW_TEXT
         EI
-        JP TEXT_LOAD_0E1F
+        JP RESULTS_INIT_MESSAGE_COUNT
 
 GAME_FRAME_SERVICE:
         OUT ($07),A
@@ -2286,17 +2286,17 @@ GAME_FRAME_SERVICE:
         LD (HL),A
         LD A,($2023)
         AND A
-        JP Z,GAME_LOAD_0C2A
+        JP Z,ATTRACT_CHECK_START_COUNTDOWN
 
 UPDATE_GAMEPLAY:
         CALL UPDATE_COIN_GAME_STATE
         LD A,($2023)
         AND A
-        JP Z,GAME_CALL_0C21
+        JP Z,ATTRACT_READ_RANDOM_INPUT
         LD HL,$2041
         LD A,(HL)
         AND A
-        JP NZ,GAME_LOAD_0C12
+        JP NZ,FRAME_CHECK_BONUS_SCORE
         LD (HL),$3C
         LD HL,$2034
         DEC (HL)
@@ -2305,7 +2305,7 @@ UPDATE_GAMEPLAY:
         ADD A,$99
         DAA
         LD (HL),A
-        JP NZ,GAME_CALL_0C0F
+        JP NZ,FRAME_DISPLAY_REMAINING_TIME
         LD A,($2023)
         XOR $03
         JP Z,END_RACE
@@ -2337,10 +2337,10 @@ UPDATE_GAMEPLAY:
         RST $30
         DB $81  ; inline argument, not executable code
 
-GAME_CALL_0C0F:
+FRAME_DISPLAY_REMAINING_TIME:
         CALL DISPLAY_GAME_CLOCK
 
-GAME_LOAD_0C12:
+FRAME_CHECK_BONUS_SCORE:
         LD HL,$2023
         LD A,(HL)
         CP $01
@@ -2351,13 +2351,13 @@ GAME_LOAD_0C12:
         INC (HL)
         RET
 
-GAME_CALL_0C21:
+ATTRACT_READ_RANDOM_INPUT:
         CALL ROAD_CODEC_STEP_1088
         LD A,($2045)
         AND $80
         RET NZ
 
-GAME_LOAD_0C2A:
+ATTRACT_CHECK_START_COUNTDOWN:
         LD HL,$2030
         LD A,(HL)
         AND A
@@ -2371,11 +2371,11 @@ GAME_LOAD_0C2A:
         LD DE,$2032
         LD B,$28
 
-GAME_LOAD_0C43:
+ATTRACT_FILL_DISPLAY_BYTES:
         LD (DE),A
         INC DE
         DEC B
-        JP NZ,GAME_LOAD_0C43
+        JP NZ,ATTRACT_FILL_DISPLAY_BYTES
         LD H,A
         IN A,($02)
         RRCA
@@ -2392,7 +2392,7 @@ GAME_LOAD_0C43:
         LD ($202D),A
         LD A,$20
         OUT ($02),A
-        CALL TEXT_CALL_0E98
+        CALL CRASH_RESET_AND_REDRAW_UI
         LD A,$01
         LD ($2023),A
         LD A,$FF
@@ -2401,11 +2401,11 @@ GAME_LOAD_0C43:
         LD ($2048),A
         IN A,($00)
         AND $10
-        JP Z,GAME_STEP_0C81
+        JP Z,GAME_SETUP_FRAME_ANIMATION
         RST $30
         DB $65  ; inline argument, not executable code
 
-GAME_STEP_0C81:
+GAME_SETUP_FRAME_ANIMATION:
         RST $28
         DB $04  ; inline argument, not executable code
         LD HL,$040B
@@ -2417,44 +2417,44 @@ GAME_STEP_0C81:
         RST $28
         DB $E8  ; inline argument, not executable code
 
-GAME_CALL_0C95:
+GAME_POLL_FRAME_SERVICE:
         CALL GAME_FRAME_SERVICE
         LD HL,$2140
         LD A,(HL)
         INC HL
         OR (HL)
-        JP Z,GAME_CALL_0CB0
+        JP Z,GAME_APPLY_INLINE_DISPLAY_POSITION
         LD A,($213E)
         AND A
-        JP Z,GAME_CALL_0CB0
-        CALL TEXT_STEP_0F33
+        JP Z,GAME_APPLY_INLINE_DISPLAY_POSITION
+        CALL INLINE_READ_WORD_FROM_RETURN_PC
         DB $04,$00  ; inline argument, not executable code
-        JP GAME_LOAD_0CB5
+        JP GAME_COMPARE_CRASH_STATE
 
-GAME_CALL_0CB0:
-        CALL TEXT_STEP_0F33
+GAME_APPLY_INLINE_DISPLAY_POSITION:
+        CALL INLINE_READ_WORD_FROM_RETURN_PC
         DB $00,$00  ; inline argument, not executable code
 
-GAME_LOAD_0CB5:
+GAME_COMPARE_CRASH_STATE:
         LD HL,$2022
         LD A,(HL)
         XOR $05
-        JP NZ,GAME_LOAD_0CC7
+        JP NZ,GAME_COMPARE_EXTENDED_STATE
         LD A,($2040)
         AND A
-        JP NZ,GAME_LOAD_0CC7
+        JP NZ,GAME_COMPARE_EXTENDED_STATE
 
 GAME_COLLISION_CHECK:
         LD (HL),$01
 
-GAME_LOAD_0CC7:
+GAME_COMPARE_EXTENDED_STATE:
         LD A,(HL)
         XOR $02
-        JP Z,TEXT_LOAD_0E59
+        JP Z,CRASH_INITIALIZE_ANIMATION
         LD HL,$2048
         LD A,(HL)
         AND A
-        JP M,GAME_CALL_0CEE
+        JP M,GAME_UPDATE_STEERING_OFFSET
         LD (HL),$F8
         LD HL,($2032)
         INC HL
@@ -2464,15 +2464,15 @@ GAME_LOAD_0CC7:
         ADD A,$01
         DAA
         LD (HL),A
-        JP NC,GAME_CALL_0CEB
+        JP NC,GAME_REFRESH_SCORE
         DEC HL
         INC (HL)
 
-GAME_CALL_0CEB:
+GAME_REFRESH_SCORE:
         CALL DISPLAY_CURRENT_SCORE
 
-GAME_CALL_0CEE:
-        CALL GAME_LOAD_0D77
+GAME_UPDATE_STEERING_OFFSET:
+        CALL GAME_SAMPLE_SPEED_INDICATOR
         LD A,($2037)
         CALL STEERING_MAGNITUDE_SIGN
         RRCA
@@ -2481,7 +2481,7 @@ GAME_CALL_0CEE:
         RRCA
         AND $03
         ADD A,$10
-        CALL TEXT_CALL_0F48
+        CALL DISPLAY_WRITE_SELECTED_MESSAGE
         LD A,($2045)
         LD B,A
         AND $0F
@@ -2494,17 +2494,17 @@ GAME_CALL_0CEE:
         LD A,B
         AND $10
         LD A,($213E)
-        JP Z,GAME_STEP_0D39
+        JP Z,GAME_SELECT_MESSAGE_BY_SPEED
         CP $28
-        JP NC,GAME_LOAD_0D27
+        JP NC,GAME_OUTPUT_ENGINE_CONTROL
         RST $30
         DB $65  ; inline argument, not executable code
         LD C,$00
         LD A,$20
         OUT ($02),A
-        JP GAME_LOAD_0D4F
+        JP GAME_STORE_STEERING_DISPLAY
 
-GAME_LOAD_0D27:
+GAME_OUTPUT_ENGINE_CONTROL:
         LD A,C
         RLCA
         LD C,A
@@ -2517,41 +2517,41 @@ UPDATE_GAME_SPEED:
         LD ($205A),A
         RST $30
         DB $60  ; inline argument, not executable code
-        JP GAME_LOAD_0D4F
+        JP GAME_STORE_STEERING_DISPLAY
 
-GAME_STEP_0D39:
+GAME_SELECT_MESSAGE_BY_SPEED:
         CP $28
-        JP C,GAME_STEP_0D43
+        JP C,GAME_SET_SLOW_SPEED_MESSAGE
         RST $30
         DB $66  ; inline argument, not executable code
-        JP GAME_LOAD_0D45
+        JP GAME_OUTPUT_SECOND_AUDIO_FLAG
 
-GAME_STEP_0D43:
+GAME_SET_SLOW_SPEED_MESSAGE:
         RST $30
         DB $60  ; inline argument, not executable code
 
-GAME_LOAD_0D45:
+GAME_OUTPUT_SECOND_AUDIO_FLAG:
         LD A,D
         OR $20
         OUT ($02),A
         LD A,$02
         LD ($205A),A
 
-GAME_LOAD_0D4F:
+GAME_STORE_STEERING_DISPLAY:
         LD A,C
         LD ($213F),A
         LD A,($2046)
         CALL READ_STEERING_INPUT
         CPL
         LD ($203A),A
-        JP GAME_CALL_0C95
+        JP GAME_POLL_FRAME_SERVICE
 
 READ_STEERING_INPUT:
         LD A,($2046)
         CPL
         ADD A,$81
         CP $81
-        JP C,GAME_STEP_0D71
+        JP C,STEERING_CLAMP_POSITIVE_LIMIT
         CP $C0
         RET NC
         LD A,$C0
@@ -2559,13 +2559,13 @@ READ_STEERING_INPUT:
 CLAMP_STEERING:
         RET
 
-GAME_STEP_0D71:
+STEERING_CLAMP_POSITIVE_LIMIT:
         CP $40
         RET C
         LD A,$3F
         RET
 
-GAME_LOAD_0D77:
+GAME_SAMPLE_SPEED_INDICATOR:
         LD A,($213E)
         LD B,A
         RRCA
@@ -2578,14 +2578,14 @@ GAME_LOAD_0D77:
         LD HL,$2142
         CP (HL)
         RET Z
-        JP C,GAME_DECREMENT_0D8F
+        JP C,GAME_DECREMENT_SPEED_TICK
         INC (HL)
-        JP GAME_LOAD_0D90
+        JP GAME_CONVERT_SPEED_TO_CHAR
 
-GAME_DECREMENT_0D8F:
+GAME_DECREMENT_SPEED_TICK:
         DEC (HL)
 
-GAME_LOAD_0D90:
+GAME_CONVERT_SPEED_TO_CHAR:
         LD A,(HL)
         RRCA
         RRCA
@@ -2606,20 +2606,20 @@ GAME_LOAD_0D90:
         LD C,$1F
         LD DE,$04FF
 
-GAME_LOAD_0DAD:
+GAME_SCROLL_TEXT_PIXEL_ROW:
         LD (HL),A
         INC HL
         LD (HL),E
         ADD HL,BC
         DEC D
-        JP NZ,GAME_LOAD_0DAD
+        JP NZ,GAME_SCROLL_TEXT_PIXEL_ROW
         RET
 
 END_RACE:
         LD SP,$2400
         LD A,$04
         LD ($2022),A
-        CALL TEXT_CALL_0E4B
+        CALL DISPLAY_UPDATE_INLINE_WORD_STATE
         LD ($2023),A
         CALL DISPLAY_GAME_CLOCK
         CALL READ_INLINE_MESSAGE
@@ -2629,25 +2629,25 @@ END_RACE:
         LD HL,($203D)
         LD A,L
         CP E
-        JP C,GAME_CALL_0DEF
-        JP NZ,GAME_LOAD_0DDF
+        JP C,GAME_PREPARE_RATING_SCREEN
+        JP NZ,GAME_SAVE_HIGH_SCORE_AND_PROMPT
         LD A,D
         CP H
-        JP NC,GAME_CALL_0DEF
+        JP NC,GAME_PREPARE_RATING_SCREEN
 
-GAME_LOAD_0DDF:
+GAME_SAVE_HIGH_SCORE_AND_PROMPT:
         LD ($202B),HL
         CALL ERASE_MESSAGE_BAND
-        CALL TEXT_STEP_0F5A
+        CALL INLINE_READ_BYTE_FROM_RETURN_PC
         DB $6F  ; inline argument, not executable code
-        CALL TEXT_STEP_0F5A
+        CALL INLINE_READ_BYTE_FROM_RETURN_PC
         DB $84  ; inline argument, not executable code
         RST $28
         DB $FF  ; inline argument, not executable code
 
-GAME_CALL_0DEF:
+GAME_PREPARE_RATING_SCREEN:
         CALL ERASE_MESSAGE_BAND
-        CALL TEXT_STEP_0F5A
+        CALL INLINE_READ_BYTE_FROM_RETURN_PC
         DB $62  ; inline argument, not executable code
         LD A,($2034)
         LD C,A
@@ -2658,47 +2658,47 @@ GAME_CALL_0DEF:
 GAME_COMPUTE_RATING:
         LD A,H
         AND A
-        JP M,TEXT_LOAD_0E0A
+        JP M,RATING_APPLY_CRASH_COUNT
         ADD HL,BC
         INC E
         JP GAME_COMPUTE_RATING
 
-TEXT_LOAD_0E0A:
+RATING_APPLY_CRASH_COUNT:
         LD A,($2035)
         AND A
         LD A,E
-        JP NZ,TEXT_STEP_0E13
+        JP NZ,RATING_DISPLAY_CLASSIFICATION
         INC A
 
-TEXT_STEP_0E13:
+RATING_DISPLAY_CLASSIFICATION:
         ADD A,$94
-        CALL TEXT_STEP_0F5E
+        CALL DISPLAY_TEXT_BY_LOCALE
         RST $28
         DB $FF  ; inline argument, not executable code
         RST $28
         DB $FF  ; inline argument, not executable code
 
-TEXT_CALL_0E1C:
-        CALL TEXT_CALL_0EB3
+RESULTS_DRAW_PLAYER_SUMMARY:
+        CALL START_PROMPT_DRAW_TEXT
 
-TEXT_LOAD_0E1F:
+RESULTS_INIT_MESSAGE_COUNT:
         LD A,$0A
         LD ($2031),A
 
-TEXT_CALL_0E24:
-        CALL TEXT_CALL_0E4B
+RESULTS_ADVANCE_MESSAGE_TIMER:
+        CALL DISPLAY_UPDATE_INLINE_WORD_STATE
         LD A,($2030)
         AND A
-        JP Z,TEXT_CALL_0E35
+        JP Z,RESULTS_WAIT_AND_UPDATE_MESSAGE
         CALL READ_INLINE_MESSAGE
         DB $08  ; inline argument, not executable code
-        JP TEXT_STEP_0E39
+        JP RESULTS_WAIT_INLINE_FRAME_TICKS
 
-TEXT_CALL_0E35:
+RESULTS_WAIT_AND_UPDATE_MESSAGE:
         CALL READ_INLINE_MESSAGE
         DB $07  ; inline argument, not executable code
 
-TEXT_STEP_0E39:
+RESULTS_WAIT_INLINE_FRAME_TICKS:
         RST $28
         DB $FF  ; inline argument, not executable code
 
@@ -2709,11 +2709,11 @@ GAME_RESULTS_SCREEN:
         DB $FF  ; inline argument, not executable code
         LD HL,$2031
         DEC (HL)
-        JP NZ,TEXT_CALL_0E24
-        JP TEXT_CALL_0E1C
+        JP NZ,RESULTS_ADVANCE_MESSAGE_TIMER
+        JP RESULTS_DRAW_PLAYER_SUMMARY
 
-TEXT_CALL_0E4B:
-        CALL TEXT_STEP_0F33
+DISPLAY_UPDATE_INLINE_WORD_STATE:
+        CALL INLINE_READ_WORD_FROM_RETURN_PC
         DB $02,$00  ; inline argument, not executable code
         LD A,$02
         LD ($202D),A
@@ -2721,38 +2721,38 @@ TEXT_CALL_0E4B:
         OUT ($02),A
         RET
 
-TEXT_LOAD_0E59:
+CRASH_INITIALIZE_ANIMATION:
         LD SP,$2400
-        CALL TEXT_STEP_0F33
+        CALL INLINE_READ_WORD_FROM_RETURN_PC
         DB $03,$3C  ; inline argument, not executable code
         CALL DISPLAY_CRASH_CAPTION
         LD HL,$2035
         INC (HL)
-        CALL TEXT_CALL_0F28
+        CALL WAIT_UNTIL_SOUND_TIMER_ZERO
         XOR A
         OUT ($02),A
-        CALL TEXT_STEP_0F33
+        CALL INLINE_READ_WORD_FROM_RETURN_PC
         DB $02,$0A  ; inline argument, not executable code
-        CALL TEXT_CALL_0F28
-        CALL TEXT_STEP_0F33
+        CALL WAIT_UNTIL_SOUND_TIMER_ZERO
+        CALL INLINE_READ_WORD_FROM_RETURN_PC
         DB $0A,$50  ; inline argument, not executable code
-        CALL TEXT_CALL_0F28
-        CALL TEXT_CALL_0E98
+        CALL WAIT_UNTIL_SOUND_TIMER_ZERO
+        CALL CRASH_RESET_AND_REDRAW_UI
         LD A,($2023)
         CP $01
         LD A,$FF
-        JP Z,TEXT_LOAD_0E8D
+        JP Z,CRASH_SET_RECOVERY_COUNTDOWN
         LD A,$78
 
-TEXT_LOAD_0E8D:
+CRASH_SET_RECOVERY_COUNTDOWN:
         LD ($2040),A
         LD A,$05
         LD ($2022),A
-        JP GAME_CALL_0C95
+        JP GAME_POLL_FRAME_SERVICE
 
-TEXT_CALL_0E98:
+CRASH_RESET_AND_REDRAW_UI:
         CALL GAME_START_PROMPT
-        CALL TEXT_STEP_0F5A
+        CALL INLINE_READ_BYTE_FROM_RETURN_PC
         DB $4B  ; inline argument, not executable code
         CALL DISPLAY_GAME_CLOCK
         CALL DISPLAY_CURRENT_SCORE
@@ -2765,9 +2765,9 @@ TEXT_CALL_0E98:
         DB $81  ; inline argument, not executable code
         RET
 
-TEXT_CALL_0EB3:
+START_PROMPT_DRAW_TEXT:
         CALL GAME_START_PROMPT
-        CALL TEXT_STEP_0F5A
+        CALL INLINE_READ_BYTE_FROM_RETURN_PC
         DB $43  ; inline argument, not executable code
         RST $30
         DB $6C  ; inline argument, not executable code
@@ -2776,10 +2776,10 @@ TEXT_CALL_0EB3:
         CALL DISPLAY_CURRENT_SCORE
         LD HL,$202B
         LD DE,$3CB9
-        CALL TEXT_CALL_0FE5
+        CALL DISPLAY_NEXT_SCORE_DIGITS
         LD HL,$2029
         LD DE,$3E99
-        CALL TEXT_CALL_0FE5
+        CALL DISPLAY_NEXT_SCORE_DIGITS
         LD A,$03
         LD ($2022),A
         LD A,$50
@@ -2797,11 +2797,11 @@ GAME_START_PROMPT:
         LD C,$EA
         XOR A
 
-TEXT_LOAD_0EF4:
+STARTUP_CLEAR_NEXT_RAM_BYTE:
         LD (HL),A
         INC HL
         DEC C
-        JP NZ,TEXT_LOAD_0EF4
+        JP NZ,STARTUP_CLEAR_NEXT_RAM_BYTE
         LD A,$01
         LD ($205A),A
         LD HL,$2062
@@ -2810,7 +2810,7 @@ TEXT_LOAD_0EF4:
         LD ($2025),HL
         LD HL,$0080
         LD ($2000),HL
-        CALL TEXT_STEP_0F5A
+        CALL INLINE_READ_BYTE_FROM_RETURN_PC
         DB $2A  ; inline argument, not executable code
         RET
 
@@ -2821,21 +2821,21 @@ RST_WAIT_INLINE_TICKS:
         EX (SP),HL
         LD ($203F),A
 
-TEXT_CALL_0F1D:
+WAIT_UNTIL_GAME_TIMER_ZERO:
         CALL GAME_FRAME_SERVICE
         LD A,($203F)
         AND A
-        JP NZ,TEXT_CALL_0F1D
+        JP NZ,WAIT_UNTIL_GAME_TIMER_ZERO
         RET
 
-TEXT_CALL_0F28:
+WAIT_UNTIL_SOUND_TIMER_ZERO:
         CALL GAME_FRAME_SERVICE
         LD A,($202E)
         AND A
-        JP NZ,TEXT_CALL_0F28
+        JP NZ,WAIT_UNTIL_SOUND_TIMER_ZERO
         RET
 
-TEXT_STEP_0F33:
+INLINE_READ_WORD_FROM_RETURN_PC:
         EX (SP),HL
         LD C,(HL)
         INC HL
@@ -2857,23 +2857,23 @@ READ_INLINE_MESSAGE:
         INC HL
         EX (SP),HL
 
-TEXT_CALL_0F48:
-        CALL TEXT_STEP_0F91
+DISPLAY_WRITE_SELECTED_MESSAGE:
+        CALL SELECT_MESSAGE_DISPLAY_SLOT
         LD (HL),A
         PUSH AF
         LD BC,$0A00
         LD DE,$2540
         CALL FILL_SCREEN_WITH_STACK
         POP AF
-        JP TEXT_STEP_0F5E
+        JP DISPLAY_TEXT_BY_LOCALE
 
-TEXT_STEP_0F5A:
+INLINE_READ_BYTE_FROM_RETURN_PC:
         EX (SP),HL
         LD A,(HL)
         INC HL
         EX (SP),HL
 
-TEXT_STEP_0F5E:
+DISPLAY_TEXT_BY_LOCALE:
         PUSH HL
         RLCA
         PUSH AF
@@ -2890,7 +2890,7 @@ TEXT_STEP_0F5E:
         LD D,(HL)
         POP AF
         AND $3E
-        JP Z,TEXT_STEP_0F8F
+        JP Z,DISPLAY_END_MESSAGE_RETURN
         PUSH DE
         LD C,A
         LD HL,$123F
@@ -2905,19 +2905,19 @@ TEXT_STEP_0F5E:
 LOOKUP_MESSAGE_SLOT:
         POP DE
 
-TEXT_LOAD_0F85:
+DISPLAY_NEXT_TEXT_CHARACTER:
         LD A,(HL)
         CALL DRAW_GLYPH
         LD A,(HL)
         INC HL
         AND A
-        JP P,TEXT_LOAD_0F85
+        JP P,DISPLAY_NEXT_TEXT_CHARACTER
 
-TEXT_STEP_0F8F:
+DISPLAY_END_MESSAGE_RETURN:
         POP HL
         RET
 
-TEXT_STEP_0F91:
+SELECT_MESSAGE_DISPLAY_SLOT:
         PUSH BC
         PUSH AF
         RLCA
@@ -2963,7 +2963,7 @@ DISPLAY_CURRENT_SCORE:
         LD HL,$203D
         LD DE,$3AD9
 
-TEXT_CALL_0FE5:
+DISPLAY_NEXT_SCORE_DIGITS:
         CALL DRAW_BCD_DIGITS
         LD A,$3E
         CALL DRAW_GLYPH
@@ -3139,7 +3139,7 @@ UNPACK_ROAD_CURVE_DATA:
         INC HL
         EX DE,HL
         LD B,$08
-        CALL ANIM_LOAD_0ADF
+        CALL ANIMATION_COPY_NEXT_BYTE
         EX DE,HL
         DEC HL
         LD BC,$FF3E
