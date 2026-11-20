@@ -16,7 +16,7 @@ This project reconstructs the original 8080 program into readable, maintainable,
 
 ## Repository
 
-- `src/280zzzap.asm` — native Intel 8080 assembly reconstruction; reset, interrupt and restart services annotated
+- `src/280zzzap.asm` — full 6 KB Intel 8080 ROM source pass: native instructions, graphics, data and text
 - `src/nl_280zzzap.cpp`, `src/nl_280zzzap.h` — netlist hardware sources
 - `tools/zmac`, `tools/zmac.exe` — project assemblers for Linux and Windows
 - `build.sh`, `build.bat` — native assembly build and ROM verification
@@ -39,7 +39,7 @@ Windows:
 build.bat
 ```
 
-The scripts use the included **zmac v1.3**, preserve source and original archives, emit a contiguous 6144-byte program image, split the image into six 1024-byte devices, and verify their SHA-1 hashes before creating `roms/280zzzap.zip`. **No Python is used.** The source currently contains the verified opening native routines. The remaining original ROM regions must be reconstructed before the six-device build can pass.
+The scripts use the included **zmac v1.3**, preserve source and original archives, emit a contiguous 6144-byte program image, split the image into six 1024-byte devices, and verify their SHA-1 hashes before creating `roms/280zzzap.zip`. **No Python is used.** The source now covers the complete 6 KB parent ROM image. It includes native instruction decoding and structured ROM data. A zmac v1.3 assembly and six-chip SHA-1 comparison are still required before the rebuild can be marked verified.
 
 MAME:
 
