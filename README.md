@@ -39,7 +39,7 @@ Windows:
 build.bat
 ```
 
-The scripts use the included **zmac v1.3**, preserve source and original archives, emit a contiguous 6144-byte program image, split the image into six 1024-byte devices, and verify their SHA-1 hashes before creating `roms/280zzzap.zip`. **No Python is used.** The source now covers the complete 6 KB parent ROM image. It includes native instruction decoding and structured ROM data. A zmac v1.3 assembly and six-chip SHA-1 comparison are still required before the rebuild can be marked verified.
+The scripts use the included **zmac v1.3**, preserve source and original archives, emit a contiguous 6144-byte program image, split the image into six 1024-byte devices, and verify their SHA-1 hashes before creating `roms/280zzzap.zip`. **No Python is used.** The source now covers the complete 6 KB parent ROM image. It includes native instruction decoding and structured ROM data. **Build verified November 20, 2026:** the assembly completed successfully, all six original ROM device SHA-1 hashes matched, and the generated ROM set ran in MAME (user-confirmed). Detailed results: [RE coverage and verification](docs/280zzzap-re-coverage.md).
 
 MAME:
 
