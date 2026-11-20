@@ -64,7 +64,21 @@ All six device CRC32s were checked against the original ZIP entries before gener
 mame 280zzzap -rompath roms -window -skip_gameinfo
 ```
 
-**Pending verification:** Run the committed assembly through the repository's zmac v1.3 assembler, compare all six SHA-1 values using `build.sh`, and test the generated ROM ZIP in MAME. The full byte-coverage pass is complete; the zmac/MAME validation gate has not yet been reported as passed.
+**Verification PASS — November 20, 2026 (local user test).** The committed `src/280zzzap.asm` assembled successfully with the repository's zmac v1.3 build script. All six output devices matched their original SHA-1 hashes, `roms/280zzzap.zip` was produced successfully, and the user confirmed that the built game runs in MAME.
+
+| Check | Result |
+| --- | --- |
+| zmac assembly of complete source | PASS |
+| `zzzaph` original SHA-1 | PASS |
+| `zzzapg` original SHA-1 | PASS |
+| `zzzapf` original SHA-1 | PASS |
+| `zzzape` original SHA-1 | PASS |
+| `zzzapd` original SHA-1 | PASS |
+| `zzzapc` original SHA-1 | PASS |
+| ZIP packaging | PASS |
+| MAME launch and run | PASS (user-reported) |
+
+Byte-for-byte reconstruction and MAME execution are verified; deeper semantic annotation remains a separate RE task.
 
 ## Remaining deep RE
 
